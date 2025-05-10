@@ -5,6 +5,7 @@ import { Barlow } from "next/font/google";
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import ConvexClientProvider from "@/components/ConvexClientProvider";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const barlow = Barlow({
   subsets: ["latin"],
@@ -24,15 +25,30 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ConvexAuthNextjsServerProvider>
-      <html lang="en">
-        <body className={`${barlow.className}  antialiased bg-GREY_10`}>
+    <html lang="en" 
+    className="dark"
+ style={{"colorScheme": "dark"}}
+    >
+      <body
+        className={`${barlow.className} antialiased bg-GREY_10`}
+        data-new-gr-c-s-check-loaded="14.1234.0"
+        data-gr-ext-installed=""
+        cz-shortcut-listen="true"
+      >
+        <ConvexAuthNextjsServerProvider>
           <ConvexClientProvider>
-            {children}
-            <Toaster />
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+              <Toaster />
+            </ThemeProvider>
           </ConvexClientProvider>
-        </body>
-      </html>
-    </ConvexAuthNextjsServerProvider>
+        </ConvexAuthNextjsServerProvider>
+      </body>
+    </html>
   );
 }

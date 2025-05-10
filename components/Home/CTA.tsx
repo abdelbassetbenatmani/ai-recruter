@@ -16,7 +16,7 @@ const CTA = () => {
         AI Recruiter
       </p>
       <Button size="lg" variant="primary">
-        <Link href="/signin">Get Started</Link>
+        <Link href="/signup">Get Started</Link>
       </Button>
     </section>
   );

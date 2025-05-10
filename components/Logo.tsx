@@ -3,7 +3,7 @@ import React from "react";
 
 const Logo = () => {
   return (
-    <div className="flex items-center">
+    <div className="flex items-center justify-center">
       <Link href="/">
         <span className="text-GREEN_60 font-bold text-2xl">AI Recruiter</span>
       </Link>

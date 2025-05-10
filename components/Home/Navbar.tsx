@@ -49,7 +49,7 @@ const Navbar = () => {
 
       {/* Desktop CTA Button */}
       <Button display="desktop" variant="primary">
-        <Link href="/signin">Get Started</Link>
+        <Link href="/signup">Get Started</Link>
       </Button>
 
       {/* Mobile Hamburger Button */}
@@ -126,7 +126,7 @@ const Navbar = () => {
             <span className="absolute bottom-0 left-0 w-full h-0.5 bg-GREEN_60 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
           </a>
           <Button display="mobile" variant="primary">
-            <Link href="/signin">Get Started</Link>
+            <Link href="/signup">Get Started</Link>
           </Button>
         </div>
       </div>
