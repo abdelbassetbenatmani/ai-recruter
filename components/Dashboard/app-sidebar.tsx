@@ -9,7 +9,14 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import {  CalendarDays, CalendarSync, CreditCard, Home, Plus,  Settings } from "lucide-react";
+import {
+  CalendarDays,
+  CalendarSync,
+  CreditCard,
+  Home,
+  Plus,
+  Settings,
+} from "lucide-react";
 import Link from "next/link";
 import Logo from "../Logo";
 import { Button } from "../ui/button";
@@ -47,7 +54,12 @@ export function AppSidebar() {
       <SidebarHeader>
         <Logo />
         <Button className="mt-8">
-          <Plus /> Create New Interview
+          <Link
+            className="flex items-center gap-x-2"
+            href="/dashboard/create-interview"
+          >
+            <Plus /> <span>Create New Interview</span>
+          </Link>
         </Button>
       </SidebarHeader>
       <SidebarContent>
@@ -56,7 +68,10 @@ export function AppSidebar() {
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild className="py-5 text-base hover:bg-primary">
+                  <SidebarMenuButton
+                    asChild
+                    className="py-5 text-base hover:bg-primary"
+                  >
                     <Link href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>

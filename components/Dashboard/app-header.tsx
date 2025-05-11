@@ -15,6 +15,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import Link from "next/link";
+import { ThemeToggle } from "../theme-toggle";
 
 export function DashboardHeader() {
   const pathname = usePathname();
@@ -34,7 +35,7 @@ export function DashboardHeader() {
   const user = useQuery(api.users.getMe);
 
   return (
-    <header className="sticky top-0 z-30 flex py-2 w-full items-center justify-between rounded-xl bg-card px-4 md:px-6 " >
+    <header className="sticky top-0 z-30 flex py-2 w-full items-center justify-between rounded-xl bg-card px-4 md:px-6 ">
       <div className="flex  gap-3 flex-col">
         <h1 className="text-lg font-semibold">
           {pathname.split("/")[2] === undefined
@@ -50,6 +51,7 @@ export function DashboardHeader() {
       </div>
 
       <div className="flex items-center gap-4">
+        <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
