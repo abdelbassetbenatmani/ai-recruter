@@ -19,8 +19,6 @@ import { ThemeToggle } from "../theme-toggle";
 
 export function DashboardHeader() {
   const pathname = usePathname();
-  console.log(pathname.split("/")[2]);
-
   // Get initials for avatar fallback
   const getInitials = (name: string) => {
     return name
