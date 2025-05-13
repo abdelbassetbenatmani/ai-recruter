@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import InterviewForm from "./_components/InterviewForm";
 import QuestionList from "./_components/QuestionList";
+import InterviewLink from "./_components/InterviewLink";
 
 const CreateInterviewPage = () => {
   const router = useRouter();
@@ -15,8 +16,8 @@ const CreateInterviewPage = () => {
     position: "",
     description: "",
     duration: "",
-    interviewTypes:[]
-  })
+    interviewTypes: [],
+  });
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
       <div className="flex items-center gap-x-2 py-4">
@@ -26,13 +27,13 @@ const CreateInterviewPage = () => {
         <h2 className="text-2xl font-semibold ">Create New Interview</h2>
       </div>
       <Progress value={step * 33.33} />
-      {
-        step === 1 ? (
-          <InterviewForm setStep={setStep} setFormData={setFormData}/>
-        ): (
-          <QuestionList setStep={setStep} formData={formData} />
-        )
-      }
+      {step === 1 ? (
+        <InterviewForm setStep={setStep} setFormData={setFormData} />
+      ) : step === 2 ? (
+        <QuestionList setStep={setStep} formData={formData} />
+      ) : (
+        <InterviewLink />
+      )}
     </div>
   );
 };

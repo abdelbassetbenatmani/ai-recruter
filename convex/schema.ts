@@ -21,4 +21,17 @@ export default defineSchema({
   numbers: defineTable({
     value: v.number(),
   }),
+  interviews: defineTable({
+    position: v.string(),
+    description: v.string(),
+    duration: v.string(),
+    interviewTypes: v.array(v.string()),
+    questions: v.array(v.object({
+      question: v.string(),
+      type: v.string()
+    })),
+    userId: v.id("users"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }),
 });

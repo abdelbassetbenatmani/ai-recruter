@@ -5,11 +5,12 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronUp, Filter } from "lucide-react";
+import { ChevronDown, ChevronUp, Filter, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,6 +19,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import axios from "axios";
+import { toast } from "sonner";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 // Define the question interface
 interface Question {
@@ -39,9 +43,11 @@ interface InterviewType {
 }
 
 const QuestionList = ({ setStep, formData }: InterviewType) => {
+  const createInterview = useMutation(api.interviews.createInterview);
   const hasFetched = useRef(false);
   const [interviewQuestions, setInterviewQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [submitting, setSubmitting] = useState<boolean>(false);
   const [filter, setFilter] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<boolean>(false);
 
@@ -54,14 +60,13 @@ const QuestionList = ({ setStep, formData }: InterviewType) => {
           const response = await axios.post("/api/generate-question", formData);
 
           console.log(response.data.data);
-          
+
           // 👇 Fix this part too (explained below)
-          const replacingJson = response.data.data.replace(
-            /```json/g,
-            ""
-          ).replace(/```/g, "");
+          const replacingJson = response.data.data
+            .replace(/```json/g, "")
+            .replace(/```/g, "");
           const content = JSON.parse(replacingJson);
-          
+
           setInterviewQuestions(content?.interviewQuestions || []);
         } catch (error) {
           console.error("Error generating questions:", error);
@@ -74,6 +79,33 @@ const QuestionList = ({ setStep, formData }: InterviewType) => {
     generateQuestions();
   }, []);
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      // Create the data to submit
+      const submissionData = {
+        ...formData,
+        questions: interviewQuestions,
+      };
+
+      // Make the API call to save the interview
+      await createInterview(submissionData);
+
+      // Show success message
+      toast.success("Interview saved successfully!");
+
+      // Move to the next step
+      setStep(3);
+    } catch (error) {
+      console.error("Error saving interview:", error);
+      toast.error("Failed to save interview. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const questionTypes = Array.from(
     new Set(interviewQuestions.map((q) => q.type)),
   );
@@ -85,6 +117,7 @@ const QuestionList = ({ setStep, formData }: InterviewType) => {
   const displayQuestions = expanded
     ? filteredQuestions
     : filteredQuestions.slice(0, 5);
+
   return (
     <div>
       {loading ? (
@@ -93,10 +126,10 @@ const QuestionList = ({ setStep, formData }: InterviewType) => {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4" />
             <CardTitle className="text-2xl">Generating Questions</CardTitle>
             <CardDescription>
-              Please wait while we generate relevant interview questions based on your inputs
+              Please wait while we generate relevant interview questions based
+              on your inputs
             </CardDescription>
           </CardHeader>
-        
         </Card>
       ) : (
         <Card className="w-full mt-10 mx-auto">
@@ -157,6 +190,30 @@ const QuestionList = ({ setStep, formData }: InterviewType) => {
               </Button>
             )}
           </CardContent>
+          <CardFooter className="flex justify-between pt-6 border-t">
+            <Button variant="outline" onClick={() => setStep(1)}>
+              Back to Form
+            </Button>
+            <form onSubmit={handleSubmit}>
+              <Button
+                type="submit"
+                disabled={submitting || interviewQuestions.length === 0}
+                className="flex items-center gap-2"
+              >
+                {submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Save Interview
+                  </>
+                )}
+              </Button>
+            </form>
+          </CardFooter>
         </Card>
       )}
     </div>
