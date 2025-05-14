@@ -12,28 +12,26 @@ const prompt = (
   duration: string,
   interviewTypes: string[],
 ) => {
-  return `const PROMPT 'You are an expert technical interviewer.
+  return `You are an expert technical interviewer.
 Based on the following inputs, generate a well-structured list of high-quality interview questions:
 Job Title: ${position}
 Job Description: ${description}
 Interview Duration: ${duration}
 Interview Type: ${interviewTypes}
-Your task:
-Analyze the job description to identify key responsibilities, required skills, and expected experience.
-Generate a list of interview questions depends on interview duration
-Adjust the number and depth of questions to match the interview duration.
-Ensure the questions match the tone and structure of a real-life ${interviewTypes} interview.
-Format your response in JSON format with array list of questions.
-Not include any explanations or additional context.
-Make sure Not include any explanations or additional context.
-Only return the JSON object with the questions and their types.
-format: interviewQuestions=[
-{question:"",
-type:' Technical/Behavioral/Experince/Problem Solving/Leaseship'},
-{question:"",
-type:' Technical/Behavioral/Experince/Problem Solving/Leaseship'},
-]
-The goal is to create a structured, relevant, and time-optimized interview plan for a ${position} role.`;
+
+IMPORTANT: Your response must be ONLY valid JSON with no additional text, comments, or explanations.
+
+Return a JSON object with this exact structure:
+{
+  "interviewQuestions": [
+    {
+      "question": "Question text here",
+      "type": "Technical/Behavioral/Experience/Problem Solving/Leadership"
+    }
+  ]
+}
+
+Do not include any text before or after the JSON object.`;
 };
 
 export async function POST(req: Request) {
@@ -42,7 +40,7 @@ export async function POST(req: Request) {
     console.log(body);
 
     const completion = await openai.chat.completions.create({
-      model: "deepseek/deepseek-chat-v3-0324:free",
+      model: "deepseek/deepseek-prover-v2:free",
       messages: [
         {
           role: "system",
@@ -63,11 +61,43 @@ export async function POST(req: Request) {
       },
     });
 
-    console.log(completion.choices[0].message.content);
+    
 
-    return NextResponse.json({
-      data: completion.choices[0].message.content,
-    });
+    const content = completion.choices[0].message.content || "";
+
+    // Parse the response to ensure it's valid JSON
+    let parsedResponse;
+    try {
+      // First attempt: direct parsing
+      parsedResponse = JSON.parse(content);
+    } catch {
+      // Second attempt: try to extract JSON using regex
+      try {
+        // Look for JSON object pattern
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          parsedResponse = JSON.parse(jsonMatch[0]);
+        } else {
+          // Third attempt: try to clean common formatting issues
+          const cleanedContent = content
+            .replace(/```json/g, "")
+            .replace(/```/g, "")
+            .trim();
+          parsedResponse = JSON.parse(cleanedContent);
+        }
+      } catch (extractError) {
+        console.error("Error extracting JSON:", extractError);
+        return NextResponse.json(
+          { error: "Failed to parse AI response" },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Return the parsed JSON directly
+    console.log(parsedResponse);
+    
+    return NextResponse.json(parsedResponse);
   } catch (error) {
     console.error("Error:", error);
     return NextResponse.json(

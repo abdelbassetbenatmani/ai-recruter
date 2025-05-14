@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const createInterview = mutation({
@@ -20,6 +20,7 @@ export const createInterview = mutation({
     if (!userId) throw new Error("Not authenticated");
 
     const interview = await ctx.db.insert("interviews", {
+      fullName: "",
       position: args.position,
       description: args.description,
       duration: args.duration,
@@ -30,5 +31,56 @@ export const createInterview = mutation({
       updatedAt: Date.now(),
     });
     return interview;
+  },
+});
+
+export const getInterviews = query({
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const interviews = await ctx.db
+      .query("interviews")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+    return interviews;
+  },
+});
+
+export const getInterview = query({
+  args: {
+    interviewId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const interview = await ctx.db
+      .query("interviews")
+      .filter((q) => q.eq(q.field("_id"), args.interviewId))
+      .collect();
+    return interview;
+  },
+});
+
+export const updateInterview = mutation({
+  args: {
+    id: v.id("interviews"),
+    // Define the fields you want to update
+    update: v.object({
+      fullName: v.optional(v.string()),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const { id, update } = args;
+
+    // Check if the document exists
+    const existingInterview = await ctx.db.get(id);
+    if (!existingInterview) {
+      throw new Error("Interview not found");
+    }
+
+    // Update the document with the provided fields
+    await ctx.db.patch(id, update);
   },
 });

@@ -22,12 +22,9 @@ import axios from "axios";
 import { toast } from "sonner";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { Question } from "../page";
 
 // Define the question interface
-interface Question {
-  question: string;
-  type: string;
-}
 
 // Define the form data interface
 interface FormData {
@@ -40,12 +37,20 @@ interface FormData {
 interface InterviewType {
   setStep: React.Dispatch<React.SetStateAction<number>>;
   formData: FormData;
+  interviewQuestions: Question[];
+  setInterviewQuestions: React.Dispatch<React.SetStateAction<Question[]>>;
+  setInterviewId: React.Dispatch<React.SetStateAction<string >>;
 }
 
-const QuestionList = ({ setStep, formData }: InterviewType) => {
+const QuestionList = ({
+  setStep,
+  formData,
+  setInterviewQuestions,
+  interviewQuestions,
+  setInterviewId,
+}: InterviewType) => {
   const createInterview = useMutation(api.interviews.createInterview);
   const hasFetched = useRef(false);
-  const [interviewQuestions, setInterviewQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [filter, setFilter] = useState<string | null>(null);
@@ -58,16 +63,7 @@ const QuestionList = ({ setStep, formData }: InterviewType) => {
         try {
           setLoading(true);
           const response = await axios.post("/api/generate-question", formData);
-
-          console.log(response.data.data);
-
-          // 👇 Fix this part too (explained below)
-          const replacingJson = response.data.data
-            .replace(/```json/g, "")
-            .replace(/```/g, "");
-          const content = JSON.parse(replacingJson);
-
-          setInterviewQuestions(content?.interviewQuestions || []);
+          setInterviewQuestions(response?.data?.interviewQuestions || []);
         } catch (error) {
           console.error("Error generating questions:", error);
         } finally {
@@ -91,11 +87,12 @@ const QuestionList = ({ setStep, formData }: InterviewType) => {
       };
 
       // Make the API call to save the interview
-      await createInterview(submissionData);
-
+      const response = await createInterview(submissionData);
       // Show success message
       toast.success("Interview saved successfully!");
 
+      // Set the interview ID
+      setInterviewId(response);
       // Move to the next step
       setStep(3);
     } catch (error) {

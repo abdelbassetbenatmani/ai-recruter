@@ -22,6 +22,9 @@ export default defineSchema({
     value: v.number(),
   }),
   interviews: defineTable({
+    fullName: v.optional(
+      v.string()
+    ),
     position: v.string(),
     description: v.string(),
     duration: v.string(),
