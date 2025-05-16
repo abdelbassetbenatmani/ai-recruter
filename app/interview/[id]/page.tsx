@@ -86,7 +86,6 @@ const WrongIDCard = () => {
 const InterviewPage = async ({ params }: { params: { id: string } }) => {
   // Ensure params is awaited before accessing id
   const id = params?.id;
-  console.log(id);
 
   // Now use the id in your fetchQuery
   const interview = await fetchQuery(api.interviews.getInterview, {

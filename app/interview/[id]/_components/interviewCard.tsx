@@ -31,7 +31,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export default function InterviewCard({interview}: {interview: any}) {
-    const router = useRouter()
+  const router = useRouter()
   const updateInterview = useMutation(api.interviews.updateInterview);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -60,15 +60,19 @@ export default function InterviewCard({interview}: {interview: any}) {
       
       toast.success("Name submitted successfully");
       setIsSubmitted(true);
-
-      // Redirect to the interview page
-      router.push(`/interview/${interview._id}/start`);
+      
+      // Remove the automatic redirect to allow user to click the Join Interview button
+      // router.push(`/interview/${interview._id}/start`);
     } catch (error) {
       console.error("Error updating interview:", error);
       toast.error("Failed to submit name. Please try again.");
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const handleJoinInterview = () => {
+    router.push(`/interview/${interview._id}/start`);
   };
 
   return (
@@ -129,7 +133,10 @@ export default function InterviewCard({interview}: {interview: any}) {
               </AlertDescription>
             </Alert>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Button className="flex items-center justify-center gap-2">
+              <Button 
+                className="flex items-center justify-center gap-2"
+                onClick={handleJoinInterview}
+              >
                 <Video className="w-4 h-4" />
                 <span>Join Interview</span>
               </Button>

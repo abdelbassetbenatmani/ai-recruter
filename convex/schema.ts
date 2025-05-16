@@ -28,6 +28,9 @@ export default defineSchema({
     position: v.string(),
     description: v.string(),
     duration: v.string(),
+    interviewDuration: v.optional(
+      v.string()
+    ),
     interviewTypes: v.array(v.string()),
     questions: v.array(v.object({
       question: v.string(),
@@ -37,4 +40,21 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   }),
+  interviewFeedback: defineTable({
+    interviewId: v.id("interviews"),
+    feedback: v.object({
+      rating: v.object({
+        technicalSkills: v.number(),
+        communication: v.number(),
+        problemSolving: v.number(),
+        experience: v.number()
+      }),
+      summary: v.string(),
+      recommendation: v.string(),
+      recommendationMsg: v.string()
+    }),
+    userId: v.id("users"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
 });

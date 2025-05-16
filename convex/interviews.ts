@@ -66,6 +66,7 @@ export const updateInterview = mutation({
     // Define the fields you want to update
     update: v.object({
       fullName: v.optional(v.string()),
+      interviewDuration: v.optional(v.string()),
     }),
   },
   handler: async (ctx, args) => {
