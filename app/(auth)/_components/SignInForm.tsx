@@ -30,8 +30,8 @@ import {
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useTheme } from "next-themes";
 import Logo from "@/components/Logo";
+import { ConvexError } from "convex/values";
 
 // Define the form validation schema using Zod
 const formSchema = z.object({
@@ -47,9 +47,6 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const SignInForm = () => {
-  const { theme } = useTheme();
-  console.log(theme);
-
   const router = useRouter();
   // In your login component
   const { signIn } = useAuthActions();
@@ -80,17 +77,19 @@ const SignInForm = () => {
 
       // Use Convex signIn method with password
       await signIn("password", formData)
-        .catch((error) => {
-          console.error("Sign in error:", error);
-          setAuthError(
-            error.message ||
-              "An error occurred during sign in. Please try again.",
-          );
-          toast("Sign in error");
-        })
         .then(() => {
-          toast("Sign in successful");
+          toast.success("Sign in successful");
           router.push("/dashboard");
+        })
+        .catch((error) => {
+          console.error(error);
+          if (error instanceof ConvexError && error.data === "INVALID_PASSWORD") {
+            setAuthError("Invalid password - check the requirements and try again.");
+            toast.error("Invalid password");
+          } else {
+            setAuthError("An error occurred during sign in. Please try again.");
+            toast.error("Sign in error");
+          }
         });
     } finally {
       setIsLoading(false);

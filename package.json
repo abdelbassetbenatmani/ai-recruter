@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@convex-dev/auth": "^0.0.81",
+    "@elevenlabs/react": "^0.1.6",
     "@hookform/resolvers": "^5.0.1",
     "@radix-ui/react-avatar": "^1.1.9",
     "@radix-ui/react-checkbox": "^1.2.3",
@@ -27,7 +28,7 @@
     "@radix-ui/react-switch": "^1.2.2",
     "@radix-ui/react-tabs": "^1.1.9",
     "@radix-ui/react-tooltip": "^1.2.4",
-    "@vapi-ai/web": "^2.3.0",
+    "@vapi-ai/web": "^2.3.5",
     "axios": "^1.9.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

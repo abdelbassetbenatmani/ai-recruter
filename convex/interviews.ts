@@ -42,6 +42,8 @@ export const getInterviews = query({
     const interviews = await ctx.db
       .query("interviews")
       .filter((q) => q.eq(q.field("userId"), userId))
+      .order("desc") // Sort by createdAt descending
+      // .order("desc", (q) => q.field("createdAt"))
       .collect();
     return interviews;
   },

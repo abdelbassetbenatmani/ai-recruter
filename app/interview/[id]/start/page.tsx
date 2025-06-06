@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useParams, useRouter } from "next/navigation";
@@ -14,12 +14,10 @@ import VideoCard from "../_components/VideoCard";
 import { toast } from "sonner";
 import { Id } from "@/convex/_generated/dataModel";
 
-const vapi = new Vapi(process.env.NEXT_PUBLIC_VAPI_API_KEY ?? "");
-// Parse duration string to seconds
+// Helper functions moved outside component for cleanliness
 const parseDuration = (durationStr: string | undefined): number => {
   if (!durationStr) return 30 * 60; // Default 30 minutes
 
-  // Extract numbers and check if it contains "min" or "hour"
   const numMatch = durationStr.match(/\d+/);
   const number = numMatch ? parseInt(numMatch[0], 10) : 30;
 
@@ -30,29 +28,58 @@ const parseDuration = (durationStr: string | undefined): number => {
   }
 };
 
-// Format time as mm:ss
-const formatTime = (seconds: number) => {
+const formatTime = (seconds: number): string => {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 };
 
 const StartInterviewPage = () => {
+  // Router and params
   const router = useRouter();
   const params = useParams();
-  const id = params?.id;
+  const id = params?.id as string;
+
+  // Refs
+  const vapiRef = useRef<Vapi | null>(null);
+
+  // Queries and mutations
   const updateInterview = useMutation(api.interviews.updateInterview);
   const interviews = useQuery(api.interviews.getInterview, {
-    interviewId: id?.toString() ?? "",
+    interviewId: id || "",
   });
-
   const interview = interviews?.[0];
-  const [time, setTime] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isAISpeaking, setIsAISpeaking] = useState(false);
-  const [vapiStarted, setVapiStarted] = useState(false);
+
+  // State
+  const [time, setTime] = useState<number>(0);
+  const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [isAISpeaking, setIsAISpeaking] = useState<boolean>(false);
+  const [vapiStarted, setVapiStarted] = useState<boolean>(false);
   const [maxDuration, setMaxDuration] = useState<number | null>(null);
-  const [conversation, setConversation] = useState<any[]>([]);
+  const [conversation, setConversation] = useState<
+    Array<{
+      role: string;
+      content: string;
+      timestamp: number;
+      type?: string;
+    }>
+  >([]);
+
+  // Initialize Vapi instance once
+  useEffect(() => {
+    vapiRef.current = new Vapi(process.env.NEXT_PUBLIC_VAPI_API_KEY || "");
+
+    return () => {
+      // Clean up when component unmounts
+      if (vapiRef.current) {
+        try {
+          vapiRef.current.stop();
+        } catch (error) {
+          console.error("Error stopping Vapi on unmount:", error);
+        }
+      }
+    };
+  }, []);
 
   // Set max duration when interview data is loaded
   useEffect(() => {
@@ -62,56 +89,163 @@ const StartInterviewPage = () => {
     }
   }, [interview]);
 
+  // Initialize Vapi with assistant options when interview data is loaded
+  useEffect(() => {
+    if (interview && vapiRef.current && !vapiStarted) {
+      const questionList = interview.questions.map(
+        (question) => question.question,
+      );
+      const questionListString = questionList?.join(", ");
+
+      const assistantOptions: AssistantOverrides = {
+        name: "AI Recruiter",
+        firstMessage: `Hi ${interview.fullName || "there"}, how are you? Ready for your interview on ${interview.position || "this position"}?`,
+        transcriber: {
+          provider: "deepgram",
+          model: "nova-2",
+          language: "en-US",
+        },
+        voice: {
+          provider: "playht",
+          voiceId: "jennifer",
+        },
+        model: {
+          provider: "openai",
+          model: "gpt-4",
+          messages: [
+            {
+              role: "system",
+              content: `
+                You are an AI voice assistant conducting interviews.
+                Your job is to ask candidates provided interview questions, assess their responses.
+                Begin the conversation with a friendly introduction, setting a relaxed yet professional tone. Example:
+                "Hey there! Welcome to your ${interview.position || "technical"} interview. Let's get started with a few questions!"
+
+                Ask one question at a time and wait for the candidate's response before proceeding. Keep the questions clear and concise. Below Are the questions ask one by one:
+                Questions: ${questionListString}
+
+                If the candidate struggles, offer hints or rephrase the question without giving away the answer. Example:
+                "Need a hint? Think about how React tracks component updates!"
+
+                Provide brief, encouraging feedback after each answer. Example:
+                "Nice! That's a solid answer."
+                "Hmm, not quite! Want to try again?"
+
+                Keep the conversation natural and engaging-use casual phrases like "Alright, next up..." or "Let's tackle a tricky one!" After 5-7 questions, wrap up the interview smoothly by summarizing their performance. Example:
+                "That was great! You handled some tough questions well. Keep sharpening your skills!"
+
+                End on a positive note:
+                "Thanks for chatting! Hope to see you crushing projects soon!"
+
+                Key Guidelines:
+                - Be friendly, engaging, and witty
+                - Keep responses short and natural, like a real conversation
+                - Adapt based on the candidate's confidence level
+                - Ensure the interview remains focused on ${interview.position || "the role"}
+              `.trim(),
+            },
+          ],
+        },
+      };
+
+      // Set up event listeners before starting Vapi
+      const handleMessage = (message: any) => {
+        console.log("Message received:", message);
+
+        // For transcript messages, format and add to conversation
+        if (message.type === "transcript" || message.type === "message") {
+          console.log(`${message.role}: ${message.transcript}`);
+          const newMessage = {
+            role: message.role || "unknown",
+            content: message.transcript || message.text || "",
+            timestamp: Date.now(),
+            type: message.type,
+          };
+
+          setConversation((prev) => [...prev, newMessage]);
+        }
+      };
+
+      const handleSpeechStart = () => {
+        console.log("Assistant speech has started");
+        setIsAISpeaking(true);
+      };
+
+      const handleSpeechEnd = () => {
+        console.log("Assistant speech has ended");
+        setIsAISpeaking(false);
+      };
+
+      // Add event listeners
+      vapiRef.current.on("message", (message) => {
+        if (message.type === "transcript") {
+          // Handle transcript messages
+
+          console.log(`${message.role}: ${message.transcript}`);
+          const newMessage = {
+            role: message.role || "unknown",
+            content: message.transcript || message.text || "",
+            timestamp: Date.now(),
+            type: message.type,
+          };
+          setConversation((prev) => [...prev, newMessage]);
+        }
+      });
+      vapiRef.current.on("speech-start", handleSpeechStart);
+      vapiRef.current.on("speech-end", handleSpeechEnd);
+
+      // Start Vapi
+      try {
+        vapiRef.current.start(
+          "c91b4bd5-81d2-49a8-b9bf-78657ab43734",
+          assistantOptions,
+        );
+        setVapiStarted(true);
+
+        // Check initial mute state
+        if (vapiRef.current.isMuted) {
+          setIsMuted(vapiRef.current.isMuted());
+        }
+      } catch (error) {
+        console.error("Error starting Vapi:", error);
+        toast.error("Failed to start interview assistant");
+      }
+
+      // Clean up function
+      return () => {
+        if (vapiRef.current) {
+          try {
+            vapiRef.current.off("message", handleMessage);
+            vapiRef.current.off("speech-start", handleSpeechStart);
+            vapiRef.current.off("speech-end", handleSpeechEnd);
+          } catch (error) {
+            console.error("Error removing Vapi event listeners:", error);
+          }
+        }
+      };
+    }
+  }, [interview, vapiStarted]);
+
   // Timer effect with duration check
   useEffect(() => {
+    if (maxDuration === null) return;
+
     const timer = setInterval(() => {
       setTime((prevTime) => {
         const newTime = prevTime + 1;
 
         // Check if we've reached the max duration
-        if (maxDuration && newTime >= maxDuration) {
-          // Clear the interval
+        if (newTime >= maxDuration) {
           clearInterval(timer);
-
-          // Show a toast notification
-          toast.info("Interview time limit reached");
-
-          // Save interview duration before stopping
-          if (interview?._id) {
-            updateInterview({
-              id: interview._id as Id<"interviews">,
-              update: {
-                interviewDuration: formatTime(newTime),
-              },
-            })
-              .then(() => {
-                // Stop the Vapi call
-                vapi.stop();
-
-                // Redirect to the completion page
-                router.push(`/interview/${id}/complete`);
-              })
-              .catch((error) => {
-                console.error("Error updating interview duration:", error);
-                // Still stop and redirect even if saving fails
-                vapi.stop();
-                router.push(`/interview/${id}/complete`);
-              });
-          } else {
-            // If no interview ID, just stop and redirect
-            vapi.stop();
-            router.push(`/interview/${id}/complete`);
-          }
-
-          return newTime;
+          endInterview(newTime);
+          return maxDuration; // Cap at max duration
         }
-
         return newTime;
       });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [maxDuration, id, router, interview, updateInterview]);
+  }, [maxDuration]);
 
   // Calculate remaining time
   const getRemainingTime = (): string => {
@@ -136,118 +270,12 @@ const StartInterviewPage = () => {
     }
   };
 
-  useEffect(() => {
-    // Only proceed if interview data is loaded and Vapi hasn't been started yet
-    if (interview && !vapiStarted) {
-      const questionList = interview.questions.map(
-        (question) => question.question,
-      );
-      const questionListString = questionList.join(", ");
-
-      const assistantOptions: AssistantOverrides = {
-        name: "AI Recruiter",
-        clientMessages: [],
-        serverMessages: [],
-        firstMessage: `Hi ${interview.fullName || "there"}, how are you? Ready for your interview on ${interview.position || "this position"}?`,
-        transcriber: {
-          provider: "deepgram",
-          model: "nova-2",
-          language: "en-US",
-        },
-        voice: {
-          provider: "playht",
-          voiceId: "jennifer",
-        },
-        model: {
-          provider: "openai",
-          model: "gpt-4",
-          messages: [
-            {
-              role: "system",
-              content: `
-                 You are an AI voice assistant conducting interviews.
-                 Your job is to ask candidates provided interview questions, assess their responses.
-                 Begin the conversation with a friendly introduction, setting a relaxed yet professional tone. Example:
-                 "Hey there! Welcome to your ${interview.position || "technical"} interview. Let's get started with a few questions!"
-
-                 Ask one question at a time and wait for the candidate's response before proceeding. Keep the questions clear and concise. Below Are the questions ask one by one:
-                 Questions: ${questionListString}
-
-                 If the candidate struggles, offer hints or rephrase the question without giving away the answer. Example:
-                 "Need a hint? Think about how React tracks component updates!"
-
-                 Provide brief, encouraging feedback after each answer. Example:
-                 "Nice! That's a solid answer."
-                 "Hmm, not quite! Want to try again?"
-
-                 Keep the conversation natural and engaging-use casual phrases like "Alright, next up..." or "Let's tackle a tricky one!" After 5-7 questions, wrap up the interview smoothly by summarizing their performance. Example:
-                 "That was great! You handled some tough questions well. Keep sharpening your skills!"
-
-                 End on a positive note:
-                 "Thanks for chatting! Hope to see you crushing projects soon!"
-
-                 Key Guidelines:
-                 - Be friendly, engaging, and witty
-                 - Keep responses short and natural, like a real conversation
-                 - Adapt based on the candidate's confidence level
-                 - Ensure the interview remains focused on ${interview.position || "the role"}
-               `.trim(),
-            },
-          ],
-        },
-      };
-
-      vapi.start("c91b4bd5-81d2-49a8-b9bf-78657ab43734", assistantOptions);
-
-      // Set up event listeners for speech
-      vapi.on("speech-start", () => {
-        console.log("Assistant speech has started.");
-        setIsAISpeaking(true);
-      });
-
-      vapi.on("speech-end", () => {
-        console.log("Assistant speech has ended.");
-        setIsAISpeaking(false);
-      });
-
-      // Add message event listener to capture conversation
-      vapi.on("message", (message) => {
-        console.log("Message received:", message);
-        setConversation(prev => [...prev, message]);
-      });
-
-      // Check initial mute state
-      setIsMuted(vapi.isMuted());
-
-      setVapiStarted(true);
-
-      return () => {
-        // Clean up event listeners and stop Vapi when component unmounts
-        try {
-          vapi.off("speech-start", () => {
-            console.log("Assistant speech has started....");
-          });
-
-          vapi.off("speech-end", () => {
-            console.log("Assistant speech has ended....");
-          });
-
-          vapi.off("message", () => {
-            console.log("Message event listener removed...");
-          });
-        } catch (error) {
-          console.error("Error stopping Vapi:", error);
-        }
-      };
-    }
-  }, [interview, vapiStarted]);
-
   // Handle mute toggle
   const toggleMute = () => {
     try {
-      if (vapiStarted && vapi) {
-        const currentMuteState = vapi.isMuted();
-        vapi.setMuted(!currentMuteState);
+      if (vapiStarted && vapiRef.current) {
+        const currentMuteState = vapiRef.current.isMuted();
+        vapiRef.current.setMuted(!currentMuteState);
         setIsMuted(!currentMuteState);
       } else {
         // If vapi hasn't started yet, just toggle the UI state
@@ -260,24 +288,62 @@ const StartInterviewPage = () => {
     }
   };
 
-  // Safely stop Vapi and redirect
-  const endInterview = async () => {
+  // End interview function - use either from timeout or manual end
+  const endInterview = async (currentTime?: number) => {
+    const timeToRecord = currentTime || time;
+
+    // Show toast notification if ending due to time limit
+    if (currentTime && maxDuration && currentTime >= maxDuration) {
+      toast.info("Interview time limit reached");
+    }
+
     try {
-      await updateInterview({
-        id: interview?._id as Id<"interviews">,
-        update: {
-          interviewDuration: formatTime(time),
-        },
-      });
-      console.log(conversation);
-      
-      vapi.stop();
-      console.log("Vapi stopped manually");
+      // Only update if we have an interview ID
+      if (interview?._id) {
+        // Prepare conversation data for storage
+        // const processedConversation = conversation.map(msg => ({
+        //   role: msg.role,
+        //   content: msg.content,
+        //   timestamp: msg.timestamp
+        // }));
+
+        // Update interview with duration and conversation
+        await updateInterview({
+          id: interview._id as Id<"interviews">,
+          update: {
+            interviewDuration: formatTime(timeToRecord),
+            // conversation: processedConversation
+          },
+        });
+
+        console.log("Interview data saved:", {
+          duration: formatTime(timeToRecord),
+          conversationLength: conversation.length,
+        });
+      }
+
+      // Stop Vapi
+      if (vapiRef.current) {
+        vapiRef.current.stop();
+        console.log("Vapi stopped successfully");
+      }
+
+      // Redirect to completion page
+      router.push(`/interview/${id}/complete`);
     } catch (error) {
-      console.error("Error stopping Vapi:", error);
-    } finally {
-      // Always redirect, even if there was an error stopping Vapi
-      // router.push(`/interview/${id}/complete`);
+      console.error("Error ending interview:", error);
+      toast.error("Error saving interview data");
+
+      // Still try to stop Vapi and redirect even if saving fails
+      if (vapiRef.current) {
+        try {
+          vapiRef.current.stop();
+        } catch (stopError) {
+          console.error("Error stopping Vapi:", stopError);
+        }
+      }
+
+      router.push(`/interview/${id}/complete`);
     }
   };
 
@@ -317,6 +383,30 @@ const StartInterviewPage = () => {
             />
           </div>
 
+          {/* Recent transcript display */}
+          {conversation.length > 0 && (
+            <div className="mt-4 p-4 rounded-lg shadow-sm bg-slate-50 dark:bg-slate-800">
+              <h3 className="text-sm font-semibold mb-2 text-gray-800 dark:text-gray-100">
+              Recent conversation:
+              </h3>
+              {conversation.slice(-3).map((msg, i) => (
+              <div
+                key={i}
+                className={`mb-2 ${
+                msg.role === "assistant"
+                  ? "text-blue-700 dark:text-blue-300"
+                  : "text-gray-700 dark:text-gray-300"
+                }`}
+              >
+                <span className="font-medium">
+                {msg.role === "assistant" ? "Recruiter: " : "You: "}
+                </span>
+                <span>{msg.content}</span>
+              </div>
+              ))}
+            </div>
+          )}
+
           {/* Controls */}
           <div className="mt-6 flex justify-center gap-4">
             <Button
@@ -335,11 +425,22 @@ const StartInterviewPage = () => {
             <Button
               variant="destructive"
               size="lg"
-              onClick={endInterview}
+              onClick={() => endInterview()}
               className="rounded-full p-6"
             >
               <PhoneOff className="h-6 w-6" />
             </Button>
+          </div>
+
+          {/* Connection status */}
+          <div className="mt-4 text-center">
+            <span
+              className={`text-xs ${vapiStarted ? "text-green-600" : "text-amber-600"}`}
+            >
+              {vapiStarted
+                ? "Interview in progress"
+                : "Connecting to interview assistant..."}
+            </span>
           </div>
         </main>
       </div>
