@@ -10,26 +10,27 @@ const prompt = (conversation: string) => {
   return `
 ${conversation}
 Depends on this Interview Conversation between assitant and user,
-Give me feedback for user interview. Give me rating out of 10 for technical Skills, Communication, Problem Solving, Experince. Also give me summery in 3 lines about the interview and one line to let me know whether is recommanded
-for hire or not with msg. Give me response in JSON format
-{
-feedback:{
-rating:{
-techicalSkills:5,
-communication:6,
-problem Solving:4,
-experince:7
-},
-summery:<in 3 Line>,
-Recommendation:",
-RecommendationMsg:"`;
-};
+Give me feedback for user interview. Give me rating out of 10 for technical Skills, Communication, Problem Solving, Experince. 
+Also give me summery in 3 lines about the interview and clear recommendation for hire or not with explanation message.
+Give me response in JSON format with the EXACT structure shown below:
 
+{
+  "feedback": {
+    "rating": {
+      "technicalSkills": 5,
+      "communication": 6,
+      "problemSolving": 4,
+      "experience": 7
+    },
+    "summary": "Summary text here in 3 lines",
+    "recommendation": "Hire" or "Do Not Hire" or "Consider",
+    "recommendationMsg": "Explanation of recommendation"
+  }
+}`;
+};
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    console.log(body);
-
     const completion = await openai.chat.completions.create({
       model: "deepseek/deepseek-prover-v2:free",
       messages: [
@@ -48,7 +49,14 @@ export async function POST(req: Request) {
       },
     });
 
-    const content = completion.choices[0].message.content || "";
+    console.log("AI Response:", completion.choices);
+    const content =
+      completion.choices &&
+      completion.choices[0] &&
+      completion.choices[0].message &&
+      typeof completion.choices[0].message.content === "string"
+        ? completion.choices[0].message.content
+        : "";
 
     // Parse the response to ensure it's valid JSON
     let parsedResponse;
@@ -79,8 +87,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // Return the parsed JSON directly
-    console.log(parsedResponse);
+    console.log("Parsed Response:", parsedResponse);
 
     return NextResponse.json(parsedResponse);
   } catch (error) {

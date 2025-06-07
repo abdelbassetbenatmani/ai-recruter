@@ -14,6 +14,7 @@ export interface PrevouisInterviewsProps {
   position: string;
   description: string;
   duration: string;
+  fullName?: string;
   createdAt: number;
 }
 

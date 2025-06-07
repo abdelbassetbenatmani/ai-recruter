@@ -45,6 +45,7 @@ const StartInterviewPage = () => {
 
   // Queries and mutations
   const updateInterview = useMutation(api.interviews.updateInterview);
+  const createFeedback = useMutation(api.feedback.createFeedback);
   const interviews = useQuery(api.interviews.getInterview, {
     interviewId: id || "",
   });
@@ -300,22 +301,62 @@ const StartInterviewPage = () => {
     try {
       // Only update if we have an interview ID
       if (interview?._id) {
-        // Prepare conversation data for storage
-        // const processedConversation = conversation.map(msg => ({
-        //   role: msg.role,
-        //   content: msg.content,
-        //   timestamp: msg.timestamp
-        // }));
-
         // Update interview with duration and conversation
         await updateInterview({
           id: interview._id as Id<"interviews">,
           update: {
             interviewDuration: formatTime(timeToRecord),
-            // conversation: processedConversation
           },
         });
 
+        const conversationString = conversation
+          .map((msg) => `${msg.role}: ${msg.content}`)
+          .join("\n");
+
+        // create feedback entry
+        const feedback = await fetch("/api/generate-feedback", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            conversation: conversationString,
+            interviewId: interview._id,
+            // userId: interview.userId,
+          }),
+        });
+        if (!feedback.ok) {
+          throw new Error("Failed to generate feedback");
+        }
+        // Replace the section where you process the feedback data (around line 326-348)
+
+        const feedbackData = await feedback.json();
+        // Add default values for recommendation fields in case they're missing
+        const feedbackToSave = {
+          rating: {
+            technicalSkills:
+              feedbackData.feedback?.rating?.technicalSkills || 5,
+            communication: feedbackData.feedback?.rating?.communication || 5,
+            problemSolving: feedbackData.feedback?.rating?.problemSolving || 5,
+            experience: feedbackData.feedback?.rating?.experience || 5,
+          },
+          summary:
+            feedbackData.feedback?.summary ||
+            "Interview feedback summary not available.",
+          // Ensure these required fields always have a value
+          recommendation:
+            feedbackData.feedback?.recommendation || "No clear recommendation",
+          recommendationMsg:
+            feedbackData.feedback?.recommendationMsg ||
+            "No recommendation message provided",
+        };
+
+        // Save feedback with validated structure
+        await createFeedback({
+          interviewId: interview._id as Id<"interviews">,
+          feedback: feedbackToSave,
+        });
+        console.log("Feedback generated:", feedbackData);
         console.log("Interview data saved:", {
           duration: formatTime(timeToRecord),
           conversationLength: conversation.length,
@@ -387,22 +428,22 @@ const StartInterviewPage = () => {
           {conversation.length > 0 && (
             <div className="mt-4 p-4 rounded-lg shadow-sm bg-slate-50 dark:bg-slate-800">
               <h3 className="text-sm font-semibold mb-2 text-gray-800 dark:text-gray-100">
-              Recent conversation:
+                Recent conversation:
               </h3>
               {conversation.slice(-3).map((msg, i) => (
-              <div
-                key={i}
-                className={`mb-2 ${
-                msg.role === "assistant"
-                  ? "text-blue-700 dark:text-blue-300"
-                  : "text-gray-700 dark:text-gray-300"
-                }`}
-              >
-                <span className="font-medium">
-                {msg.role === "assistant" ? "Recruiter: " : "You: "}
-                </span>
-                <span>{msg.content}</span>
-              </div>
+                <div
+                  key={i}
+                  className={`mb-2 ${
+                    msg.role === "assistant"
+                      ? "text-blue-700 dark:text-blue-300"
+                      : "text-gray-700 dark:text-gray-300"
+                  }`}
+                >
+                  <span className="font-medium">
+                    {msg.role === "assistant" ? "Recruiter: " : "You: "}
+                  </span>
+                  <span>{msg.content}</span>
+                </div>
               ))}
             </div>
           )}
