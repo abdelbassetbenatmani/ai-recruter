@@ -73,7 +73,7 @@ const QuestionList = ({
     };
 
     generateQuestions();
-  }, []);
+  }, [formData, setInterviewQuestions]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

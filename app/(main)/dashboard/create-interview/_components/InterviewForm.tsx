@@ -78,7 +78,7 @@ export default function InterviewForm({ setStep, setFormData }: InterviewType) {
     defaultValues: {
       position: "",
       description: "",
-      duration: "",
+      duration: "15min",
     },
   });
 
