@@ -35,7 +35,7 @@ export const createFeedback = mutation({
 
 export const getFeedback = query({
     args: {
-        interviewId: v.id("interviews"),
+        interviewId: v.optional(v.id("interviews")),
     },
     handler: async (ctx, args) => {
         const userId = await getAuthUserId(ctx);

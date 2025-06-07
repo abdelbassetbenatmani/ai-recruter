@@ -26,6 +26,7 @@ import {
 import { api } from "@/convex/_generated/api";
 import { useQuery } from "convex/react";
 import { useParams } from "next/navigation";
+import InterviewResultDialog from "@/components/Dashboard/InterviewResultDialog";
 const InterviewResultPage = () => {
   const params = useParams();
   const id = params?.id;
@@ -153,20 +154,18 @@ const InterviewResultPage = () => {
             )}
 
             {/* interview dailog result */}
-            <Dialog>
-              <DialogTrigger  className="w-full">
-                <Button variant="default" size={"lg"} className="w-full">
+            <Dialog >
+              <DialogTrigger  className="w-full bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 py-2 rounded-md cursor-pointer">
                   View Interview Result
-                </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="sm:max-w-4xl">
                 <DialogHeader>
-                  <DialogTitle>Are you absolutely sure?</DialogTitle>
+                  <DialogTitle>Interview Result</DialogTitle>
                   <DialogDescription>
-                    This action cannot be undone. This will permanently delete
-                    your account and remove your data from our servers.
+                    Here are the results of your interview.
                   </DialogDescription>
                 </DialogHeader>
+               <InterviewResultDialog interviewId={interview?._id} />
               </DialogContent>
             </Dialog>
           </CardContent>
