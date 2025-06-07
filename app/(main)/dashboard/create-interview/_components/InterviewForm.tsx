@@ -215,13 +215,14 @@ export default function InterviewForm({ setStep, setFormData }: InterviewType) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Interview Duration</FormLabel>
-                  <Select
+                    <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
+                    value={field.value || "15min"}
+                    defaultValue="15min"
+                    >
                     <FormControl>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select duration" />
+                      <SelectValue placeholder="Select duration" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -230,7 +231,7 @@ export default function InterviewForm({ setStep, setFormData }: InterviewType) {
                       <SelectItem value="45min">45min</SelectItem>
                       <SelectItem value="1hour">1hour</SelectItem>
                     </SelectContent>
-                  </Select>
+                    </Select>
                   <FormMessage />
                 </FormItem>
               )}

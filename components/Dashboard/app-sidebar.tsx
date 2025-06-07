@@ -10,6 +10,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import {
+  CalendarCheck,
   CalendarDays,
   CalendarSync,
   CreditCard,
@@ -28,18 +29,23 @@ const items = [
     icon: Home,
   },
   {
-    title: "Sheduled Interviews",
-    url: "#",
+    title: "Completed Interviews",
+    url: "/dashboard/completed-interviews",
+    icon: CalendarCheck,
+  },
+  {
+    title: "Scheduled Interviews",
+    url: "/dashboard/scheduled-interviews",
     icon: CalendarSync,
   },
   {
     title: "All Interviews",
-    url: "#",
+    url: "/dashboard/interviews",
     icon: CalendarDays,
   },
   {
     title: "Billing",
-    url: "#",
+    url: "/dashboard/billing",
     icon: CreditCard,
   },
   {
