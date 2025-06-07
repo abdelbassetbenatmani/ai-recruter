@@ -1,12 +1,12 @@
 import CreationSection from "@/components/Dashboard/CreationSection";
-import PrevouisInterviews from "@/components/Dashboard/PrevouisInterviews";
+import InterviewsList from "@/components/Dashboard/InterviewsList";
 import React from "react";
 
 const DashboardPage = () => {
   return (
     <div className="pt-10">
       <CreationSection />
-      <PrevouisInterviews />
+      <InterviewsList type="dashboard" title="Latest Interviews" />
     </div>
   );
 };

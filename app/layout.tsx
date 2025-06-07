@@ -34,6 +34,8 @@ export default function RootLayout({
         data-new-gr-c-s-check-loaded="14.1234.0"
         data-gr-ext-installed=""
         cz-shortcut-listen="true"
+          suppressHydrationWarning={true}
+          data-qb-installed="true"
       >
         <ConvexAuthNextjsServerProvider>
           <ConvexClientProvider>

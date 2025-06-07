@@ -36,10 +36,13 @@ export function DashboardHeader() {
     <header className="sticky top-0 z-30 flex py-2 w-full items-center justify-between rounded-xl bg-card px-4 md:px-6 ">
       <div className="flex  gap-3 flex-col">
         <h1 className="text-lg font-semibold">
-          {pathname.split("/")[2] === undefined
+            {pathname.split("/")[2] === undefined
             ? "Dashboard"
-            : pathname.split("/")[2].charAt(0).toUpperCase() +
-              pathname.split("/")[2].slice(1)}
+            : pathname
+              .split("/")[2]
+              .split("-")
+              .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+              .join(" ")}
         </h1>
         {user?.name && (
           <p className="text-sm text-muted-foreground hidden md:block">

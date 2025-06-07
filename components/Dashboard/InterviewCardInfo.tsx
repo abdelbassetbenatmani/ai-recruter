@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { PrevouisInterviewsProps } from "./PrevouisInterviews";
+import { PrevouisInterviewsProps } from "./InterviewsList";
 import {
   Card,
   CardContent,
@@ -20,9 +20,7 @@ const InterviewCardInfo: React.FC<InterviewCardInfoProps> = ({ interview }) => {
   const handleCopyLink = () => {
     // Copy interview link to clipboard
     navigator.clipboard.writeText(
-      window.location.origin +
-        "/interview/" +
-        interview._id
+      window.location.origin + "/interview/" + interview._id,
     );
     toast("Link copied to clipboard");
   };
@@ -38,12 +36,10 @@ const InterviewCardInfo: React.FC<InterviewCardInfoProps> = ({ interview }) => {
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
-              <TvMinimalPlay
-                className="h-6 w-6 text-primary"
-              />
+              <TvMinimalPlay className="h-6 w-6 text-primary" />
             </div>
             <span className="text-sm text-muted-foreground">
-              {new Date(interview.createdAt).toISOString().split('T')[0]}
+              {new Date(interview.createdAt).toISOString().split("T")[0]}
             </span>
           </div>
           <div className="flex items-center gap-1">

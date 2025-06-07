@@ -35,17 +35,55 @@ export const createInterview = mutation({
 });
 
 export const getInterviews = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const query = ctx.db
+      .query("interviews")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .order("desc"); // Sort by createdAt descending
+
+    let interviews;
+    if (args.limit !== undefined) {
+      interviews = await query.take(args.limit);
+    } else {
+      interviews = await query.collect();
+    }
+    return interviews;
+  },
+});
+
+export const getCompletedInterviews = query({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    const interviews = await ctx.db
+    const completedInterviews = await ctx.db
       .query("interviews")
       .filter((q) => q.eq(q.field("userId"), userId))
-      .order("desc") // Sort by createdAt descending
-      // .order("desc", (q) => q.field("createdAt"))
+      .filter((q) => q.neq(q.field("fullName"), "")) // fullName is not empty for completed interviews
+      .order("desc") // Sort by updatedAt descending
       .collect();
-    return interviews;
+    return completedInterviews;
+  },
+});
+
+export const getScheduledInterviews = query({
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const scheduledInterviews = await ctx.db
+      .query("interviews")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .filter((q) => q.eq(q.field("fullName"), "")) // Assuming fullName is empty for scheduled interviews
+      .order("desc") // Sort by createdAt descending
+      .collect();
+    return scheduledInterviews;
   },
 });
 

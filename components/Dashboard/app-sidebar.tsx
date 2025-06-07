@@ -40,7 +40,7 @@ const items = [
   },
   {
     title: "All Interviews",
-    url: "/dashboard/interviews",
+    url: "/dashboard/all-interviews",
     icon: CalendarDays,
   },
   {
