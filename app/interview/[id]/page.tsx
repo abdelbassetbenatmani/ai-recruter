@@ -83,11 +83,11 @@ const WrongIDCard = () => {
   );
 };
 
-const InterviewPage = async ({ params }: { params: { id: string } }) => {
-  const { id } = await params
 
-  console.log("Interview ID:", id);
-  
+
+async function InterviewPage({ params }:any) {
+  // Access the id directly from params
+  const { id } = params;
 
   // Now use the id in your fetchQuery
   const interview = await fetchQuery(api.interviews.getInterview, {
@@ -98,7 +98,7 @@ const InterviewPage = async ({ params }: { params: { id: string } }) => {
     return <WrongIDCard />;
   }
 
-  //   check if interview createdAt is more than 15 days ago
+  // Check if interview createdAt is more than 15 days ago
   const interviewDate = new Date(interview[0].createdAt);
   const now = new Date();
   const diff = now.getTime() - interviewDate.getTime();
@@ -112,7 +112,7 @@ const InterviewPage = async ({ params }: { params: { id: string } }) => {
     <div>
       <header
         className="
-        flex items-center justify-between px-6 py-4  shadow-sm border-b border-gray-200 dark:border-gray-700 h-16
+        flex items-center justify-between px-6 py-4 shadow-sm border-b border-gray-200 dark:border-gray-700 h-16
         "
       >
         <Logo />
@@ -122,6 +122,6 @@ const InterviewPage = async ({ params }: { params: { id: string } }) => {
       </div>
     </div>
   );
-};
+}
 
 export default InterviewPage;
