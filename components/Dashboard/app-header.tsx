@@ -16,6 +16,7 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import Link from "next/link";
 import { ThemeToggle } from "../theme-toggle";
+import { CreditDisplay } from "./CreditDisplay";
 
 export function DashboardHeader() {
   const pathname = usePathname();
@@ -52,6 +53,7 @@ export function DashboardHeader() {
       </div>
 
       <div className="flex items-center gap-4">
+        <CreditDisplay />
         <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

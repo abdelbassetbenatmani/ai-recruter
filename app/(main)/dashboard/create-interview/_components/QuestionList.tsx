@@ -39,7 +39,7 @@ interface InterviewType {
   formData: FormData;
   interviewQuestions: Question[];
   setInterviewQuestions: React.Dispatch<React.SetStateAction<Question[]>>;
-  setInterviewId: React.Dispatch<React.SetStateAction<string >>;
+  setInterviewId: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const QuestionList = ({
@@ -95,8 +95,7 @@ const QuestionList = ({
       setInterviewId(response);
       // Move to the next step
       setStep(3);
-    } catch (error) {
-      console.error("Error saving interview:", error);
+    } catch {
       toast.error("Failed to save interview. Please try again.");
     } finally {
       setSubmitting(false);

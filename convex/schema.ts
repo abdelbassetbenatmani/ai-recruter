@@ -56,5 +56,11 @@ export default defineSchema({
     userId: v.id("users"),
     createdAt: v.number(),
     updatedAt: v.number(),
-  })
+  }),
+  userCredits: defineTable({
+    userId: v.id("users"),
+    credits: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("userId", ["userId"]),
 });

@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { internal } from "./_generated/api";
 
 export const createInterview = mutation({
   args: {
@@ -19,6 +20,17 @@ export const createInterview = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
+    // Check if user has enough credits
+    const hasEnoughCredits = await ctx.runQuery(
+      internal.credits.hasEnoughCreditsForInterview,
+    );
+    if (!hasEnoughCredits) {
+      throw new Error(
+        "Not enough credits. Please purchase more credits to create an interview.",
+      );
+    }
+
+    // Create the interview
     const interview = await ctx.db.insert("interviews", {
       fullName: "",
       position: args.position,
@@ -30,6 +42,12 @@ export const createInterview = mutation({
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
+
+    // Deduct credits
+    await ctx.runMutation(internal.credits.deductInterviewCredits, {
+      interviewId: interview,
+    });
+
     return interview;
   },
 });

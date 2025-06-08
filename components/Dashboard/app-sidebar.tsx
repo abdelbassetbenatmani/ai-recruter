@@ -1,3 +1,4 @@
+"use client";
 import {
   Sidebar,
   SidebarContent,
@@ -21,6 +22,9 @@ import {
 import Link from "next/link";
 import Logo from "../Logo";
 import { Button } from "../ui/button";
+import CreditCheckDialog from "./CreditCheckDialog";
+import { api } from "@/convex/_generated/api";
+import { useQuery } from "convex/react";
 
 const items = [
   {
@@ -55,18 +59,24 @@ const items = [
   },
 ];
 export function AppSidebar() {
+  const userCredits = useQuery(api.credits.getUserCredits);
+  const hasEnoughCredits = userCredits !== undefined && userCredits > 0;
   return (
     <Sidebar>
       <SidebarHeader>
         <Logo />
-        <Button className="mt-8">
-          <Link
-            className="flex items-center gap-x-2"
-            href="/dashboard/create-interview"
-          >
-            <Plus /> <span>Create New Interview</span>
-          </Link>
-        </Button>
+        <CreditCheckDialog>
+          <Button className="mt-8">
+            <Link
+              className="flex items-center gap-x-2"
+              href={hasEnoughCredits ? "/dashboard/create-interview" : "#"}
+              tabIndex={hasEnoughCredits ? 0 : -1}
+              aria-disabled={!hasEnoughCredits}
+            >
+              <Plus /> <span>Create New Interview</span>
+            </Link>
+          </Button>
+        </CreditCheckDialog>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>

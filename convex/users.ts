@@ -67,3 +67,30 @@ export const saveImageToUser = mutation({
     });
   },
 });
+
+
+export const createInitialCredits = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    
+    // Check if user already has credits
+    const existingCredits = await ctx.db
+      .query("userCredits")
+      .withIndex("userId", (q) => q.eq("userId", userId))
+      .first();
+    
+    if (!existingCredits) {
+      // Give new users 4 credits (enough for 2 interviews)
+      await ctx.db.insert("userCredits", {
+        userId,
+        credits: 4,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    }
+    
+    return true;
+  },
+});
